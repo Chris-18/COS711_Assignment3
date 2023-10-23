@@ -1,0 +1,40 @@
+{
+  "description": "This is a system generated manifest of files expected to be present in this zip. It can be safely deleted.",
+  "metadata": {
+    "generated_at": "2023-07-21T12:03:18+00:00",
+    "trigger": {
+      "file_hashid": "unknown",
+      "action": "unknown"
+    }
+  },
+  "manifest": [
+    {
+      "filename": "Train.csv",
+      "filesize": 1524933,
+      "description": "This is the dataset that you will use to train your model.",
+      "created_at": "2023-07-14 10:40:56 UTC",
+      "updated_at": "2023-07-21 12:02:18 UTC"
+    },
+    {
+      "filename": "Test.csv",
+      "filesize": 487911,
+      "description": "This is the dataset that you will use to test your model.",
+      "created_at": "2023-07-14 10:41:03 UTC",
+      "updated_at": "2023-07-21 12:02:28 UTC"
+    },
+    {
+      "filename": "SampleSubmission.csv",
+      "filesize": 138618,
+      "description": "shows the submission format for this competition, with the ‘ID’ column mirroring that of Test.csv. The order of the rows does not matter, but the names of the ‘ID’ must be correct.",
+      "created_at": "2023-07-14 10:41:08 UTC",
+      "updated_at": "2023-07-21 12:02:47 UTC"
+    },
+    {
+      "filename": "drought_on_the_ground_s3_data_download.ipynb",
+      "filesize": 7740,
+      "description": "Notebook you can use to access the image files stored in the S3 bucket",
+      "created_at": "2023-07-14 10:44:49 UTC",
+      "updated_at": "2023-07-21 12:03:18 UTC"
+    }
+  ]
+}

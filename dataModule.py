@@ -49,6 +49,7 @@ class CropDamageDataModule(pl.LightningDataModule):
             batch_size=config.BATCH_SIZE,
             shuffle=True,
             num_workers=config.NUM_WORKERS,
+            persistent_workers=True,
         )
 
     def val_dataloader(self) -> EVAL_DATALOADERS:

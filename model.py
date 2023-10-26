@@ -11,7 +11,7 @@ class CropDamageModel(pl.LightningModule):
         self.resnet = models.resnet18()
         in_features = self.resnet.fc.in_features
         self.resnet.fc = nn.Linear(in_features, num_classes)
-        self.fitnessFunction = MeanSquaredError()
+        self.fitnessFunction = nn.CrossEntropyLoss()
 
     def forward(self, x):
         return self.resnet(x)

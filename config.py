@@ -1,0 +1,8 @@
+# Training Parameters
+INPUT_SIZE = 1000
+NUM_CLASSES = 10
+LEARNING_RATE = 0.001
+BATCH_SIZE = 32
+NUM_EPOCHS = 10
+
+# Dataset Parameters

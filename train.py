@@ -1,6 +1,7 @@
 import pytorch_lightning as pl
 from model import CropDamageModel
 from dataModule import CropDamageDataModule
+import config
 
 
 if __name__ == "__main__":
@@ -10,7 +11,7 @@ if __name__ == "__main__":
     batch_size = 32
     num_epochs = 10
 
-    model = CropDamageModel(num_classes=5)
+    model = CropDamageModel(num_classes=config.NUM_CLASSES)
     data_module = CropDamageDataModule(csv_path, root_dir)
     trainer = pl.Trainer(
         min_epochs=1, max_epochs=num_epochs, log_every_n_steps=50, accelerator="gpu"
@@ -18,7 +19,7 @@ if __name__ == "__main__":
 
     trainer.fit(model, data_module)
     # trainer.validate(model, data_module)
-    # trainer.test(model, data_module)
+    trainer.test(model, data_module)
 
 
 # To make predictions on the test dataset

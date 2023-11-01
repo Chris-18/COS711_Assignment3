@@ -1,8 +1,12 @@
+import math
+from typing import Any
+
 import pytorch_lightning as pl
+import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import models
 from torchmetrics import MeanSquaredError
+from torchvision import models
 
 
 class CropDamageModel(pl.LightningModule):
@@ -14,7 +18,18 @@ class CropDamageModel(pl.LightningModule):
         self.fitnessFunction = nn.CrossEntropyLoss()
 
     def forward(self, x):
-        return self.resnet(x)
+        # Get the class logits from the ResNet model
+        logits = self.resnet(x)
+
+        # # Apply softmax to convert logits to class probabilities
+        # probabilities = torch.softmax(logits, dim=1)
+        #
+        # # Get the class with the highest probability as the predicted class
+        # _, predicted_class = torch.max(probabilities, 1)
+        #
+        # results = predicted_class * 10
+
+        return logits
 
     def training_step(self, batch, batch_idx):
         loss, pred, y = self.common_step(batch, batch_idx)
@@ -35,6 +50,7 @@ class CropDamageModel(pl.LightningModule):
         x, y = batch
         pred = self(x)
         loss = self.fitnessFunction(pred, y)
+        # loss = math.sqrt(loss)
         return loss, pred, y
 
     def configure_optimizers(self):

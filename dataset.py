@@ -13,9 +13,10 @@ class CropDamageDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.root_dir, self.data.iloc[idx, 0])
+        file_name = self.data.iloc[idx, 1]
+        img_name = os.path.join(self.root_dir, file_name)
         image = Image.open(img_name)
-        label = int(self.data.iloc[idx, 3])
+        label = int(self.data.iloc[idx, 4])
 
         if self.transform:
             image = self.transform(image)

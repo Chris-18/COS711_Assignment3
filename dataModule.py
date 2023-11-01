@@ -73,4 +73,5 @@ class CropDamageDataModule(pl.LightningDataModule):
             batch_size=config.BATCH_SIZE,
             shuffle=False,
             num_workers=config.NUM_WORKERS,
+            persistent_workers=True,
         )

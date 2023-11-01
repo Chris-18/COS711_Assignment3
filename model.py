@@ -17,7 +17,7 @@ class CropDamageModel(pl.LightningModule):
         self.resnet.fc = nn.Linear(in_features, num_classes)
         self.fitnessFunction = nn.CrossEntropyLoss()
 
-    def forward(self, x):
+    def forward(self, x, y):
         # Get the class logits from the ResNet model
         logits = self.resnet(x)
 
@@ -48,10 +48,21 @@ class CropDamageModel(pl.LightningModule):
 
     def common_step(self, batch, batch_idx):
         x, y = batch
-        pred = self(x)
+        pred = self(x, y)
         loss = self.fitnessFunction(pred, y)
         # loss = math.sqrt(loss)
         return loss, pred, y
+
+    def predict_step(self, x):
+        pred = self(x, None)
+        # Apply softmax to convert pred to class probabilities
+        probabilities = torch.softmax(pred, dim=1)
+
+        # Get the class with the highest probability as the predicted class
+        _, predicted_class = torch.max(probabilities, 1)
+
+        results = predicted_class * 10
+        return results
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=0.001)

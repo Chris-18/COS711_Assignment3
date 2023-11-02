@@ -8,14 +8,16 @@ import torch.optim as optim
 from torchmetrics import MeanSquaredError
 from torchvision import models
 
+import config
+
 
 class CropDamageModel(pl.LightningModule):
-    def __init__(self, num_classes, probabilities):
+    def __init__(self):
         super(CropDamageModel, self).__init__()
         self.resnet = models.resnet18()
         in_features = self.resnet.fc.in_features
-        self.resnet.fc = nn.Linear(in_features, num_classes)
-        self.fitnessFunction = nn.CrossEntropyLoss(weight=probabilities)
+        self.resnet.fc = nn.Linear(in_features, config.NUM_CLASSES)
+        self.fitnessFunction = nn.CrossEntropyLoss()
 
     def forward(self, x, y):
         # Get the class logits from the ResNet model

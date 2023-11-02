@@ -1,8 +1,11 @@
+from collections import Counter
+
 import pytorch_lightning as pl
 import pandas as pd
 import torchvision.transforms as transforms
 from pytorch_lightning.utilities.types import EVAL_DATALOADERS, TRAIN_DATALOADERS
 from torch.utils.data import DataLoader
+import torch
 
 import config
 from torch.utils.data import random_split
@@ -17,6 +20,7 @@ class CropDamageDataModule(pl.LightningDataModule):
         self.test_dataset = None
         self.validation_dataset = None
         self.training_dataset = None
+        self.probabilities = None
         self.transform = transforms.Compose(
             [
                 transforms.Resize((224, 224)),
@@ -24,8 +28,9 @@ class CropDamageDataModule(pl.LightningDataModule):
                 transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
             ]
         )
+        self.prep_data()
 
-    def setup(self, stage: str):
+    def prep_data(self):
         full_dataset = pd.read_csv(self.csv_path)
         full_dataset = full_dataset.sample(n=config.INPUT_SIZE, random_state=42)
 
@@ -39,6 +44,16 @@ class CropDamageDataModule(pl.LightningDataModule):
         self.training_dataset = full_dataset.iloc[training_dataset.indices]
         self.validation_dataset = full_dataset.iloc[validation_dataset.indices]
         self.test_dataset = full_dataset.iloc[test_dataset.indices]
+
+        extent_counts = Counter(self.training_dataset["extent"])
+        sort_counts = sorted(extent_counts.items())
+        probabilities = []
+        total = self.training_dataset.shape[0]
+        for sort_count in sort_counts:
+            current = sort_count[1]
+            probability = current / total
+            probabilities.append(probability)
+        self.probabilities = torch.tensor(probabilities)
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:
         train_data = CropDamageDataset(

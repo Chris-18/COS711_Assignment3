@@ -12,8 +12,10 @@ if __name__ == "__main__":
     batch_size = 32
     num_epochs = 10
 
-    model = CropDamageModel(num_classes=config.NUM_CLASSES)
     data_module = CropDamageDataModule(csv_path, root_dir)
+    model = CropDamageModel(
+        num_classes=config.NUM_CLASSES, probabilities=data_module.probabilities
+    )
     trainer = pl.Trainer(
         min_epochs=1, max_epochs=num_epochs, log_every_n_steps=50, accelerator="gpu"
     )

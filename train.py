@@ -10,9 +10,9 @@ if __name__ == "__main__":
     test_csv_path = "test.csv"  # Path to your test CSV file
     root_dir = "data/content/train"  # Root directory where your images are stored
     batch_size = 32
-    num_epochs = 1
-    # run_type = "train"
-    run_type = "predict"
+    num_epochs = 25
+    run_type = "train"
+    # run_type = "predict"
 
     data_module = CropDamageDataModule(csv_path, root_dir)
     if run_type == "train":
@@ -31,14 +31,15 @@ if __name__ == "__main__":
         for batch in data_module.test_dataloader():
             x, y = batch
             pred = model.forward(x, y)
-            # Apply softmax to convert pred to class probabilities
-            probabilities = torch.softmax(pred, dim=1)
-
-            # Get the class with the highest probability as the predicted class
-            _, predicted_class = torch.max(probabilities, 1)
-
-            results = predicted_class * 10
-            print(f"Expected value: {y}\nPredicted value: {results}")
+            pred = pred.squeeze()
+            # # Apply softmax to convert pred to class probabilities
+            # probabilities = torch.softmax(pred, dim=1)
+            #
+            # # Get the class with the highest probability as the predicted class
+            # _, predicted_class = torch.max(probabilities, 1)
+            #
+            # results = predicted_class * 10
+            print(f"Expected value: {y}\nPredicted value: {pred}")
             print("")
             count = count + 1
             if count == 2:

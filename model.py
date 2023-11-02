@@ -17,7 +17,7 @@ class CropDamageModel(pl.LightningModule):
         self.resnet = models.resnet18()
         in_features = self.resnet.fc.in_features
         self.resnet.fc = nn.Linear(in_features, config.NUM_CLASSES)
-        self.fitnessFunction = nn.CrossEntropyLoss()
+        self.fitnessFunction = nn.L1Loss()
 
     def forward(self, x, y):
         # Get the class logits from the ResNet model
@@ -51,6 +51,8 @@ class CropDamageModel(pl.LightningModule):
     def common_step(self, batch, batch_idx):
         x, y = batch
         pred = self(x, y)
+        pred = pred.squeeze()
+        # pred = torch.sigmoid(pred)
         loss = self.fitnessFunction(pred, y)
         # loss = math.sqrt(loss)
         return loss, pred, y

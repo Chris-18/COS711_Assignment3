@@ -8,6 +8,6 @@ NUM_WORKERS = 9
 # Dataset Size Parameters
 # NB! The train, validation and test sizes must add up to the input size exactly.
 INPUT_SIZE = 20000
-TRAIN_SIZE = 18000
-VALIDATION_SIZE = 1000
-TEST_SIZE = 1000
+TRAIN_SIZE = 19800
+VALIDATION_SIZE = 100
+TEST_SIZE = 100

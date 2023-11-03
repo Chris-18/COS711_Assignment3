@@ -23,6 +23,9 @@ class CropDamageDataModule(pl.LightningDataModule):
         self.probabilities = None
         self.transform = transforms.Compose(
             [
+                transforms.RandomVerticalFlip(),
+                transforms.RandomRotation(10),  
+                transforms.RandomHorizontalFlip(),
                 transforms.Resize((224, 224)),
                 transforms.ToTensor(),
                 transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
@@ -34,57 +37,27 @@ class CropDamageDataModule(pl.LightningDataModule):
         full_dataset = pd.read_csv(self.csv_path)
         full_dataset = full_dataset.sample(n=config.INPUT_SIZE, random_state=42)
 
-        target_length = 1000
-        dataset_100 = self.extend_dataframe(
-            full_dataset[full_dataset["extent"] == 100], target_length
-        )
-        dataset_90 = self.extend_dataframe(
-            full_dataset[full_dataset["extent"] == 90], target_length
-        )
-        dataset_80 = self.extend_dataframe(
-            full_dataset[full_dataset["extent"] == 80], target_length
-        )
-        dataset_70 = self.extend_dataframe(
-            full_dataset[full_dataset["extent"] == 70], target_length
-        )
-        dataset_60 = self.extend_dataframe(
-            full_dataset[full_dataset["extent"] == 60], target_length
-        )
-        dataset_50 = self.extend_dataframe(
-            full_dataset[full_dataset["extent"] == 50], target_length
-        )
-        dataset_40 = self.extend_dataframe(
-            full_dataset[full_dataset["extent"] == 40], target_length
-        )
-        dataset_30 = self.extend_dataframe(
-            full_dataset[full_dataset["extent"] == 30], target_length
-        )
-        dataset_20 = self.extend_dataframe(
-            full_dataset[full_dataset["extent"] == 20], target_length
-        )
-        dataset_10 = self.extend_dataframe(
-            full_dataset[full_dataset["extent"] == 10], target_length
-        )
-        dataset_0 = self.extend_dataframe(
-            full_dataset[full_dataset["extent"] == 0], target_length
+        train_size = config.TRAIN_SIZE
+        validation_size = config.VALIDATION_SIZE
+        test_size = config.TEST_SIZE
+
+        training_dataset, validation_dataset, test_dataset = random_split(
+            full_dataset, [train_size, validation_size, test_size]
         )
 
-        concatenated_df = pd.concat(
-            [
-                dataset_0,
-                dataset_10,
-                dataset_20,
-                dataset_30,
-                dataset_40,
-                dataset_50,
-                dataset_60,
-                dataset_70,
-                dataset_80,
-                dataset_90,
-                dataset_100,
-            ],
-            axis=0,
-        )
+        self.training_dataset = training_dataset
+        self.validation_dataset = validation_dataset
+        self.test_dataset = test_dataset
+
+        target_length = 1000
+        extended_datasets = []
+        for extent_value in range(0, 101, 10):
+            extent_dataset = self.extend_dataframe(
+                training_dataset.dataset[training_dataset.dataset["extent"] == extent_value], target_length
+            )
+            extended_datasets.append(extent_dataset)
+
+        concatenated_df = pd.concat(extended_datasets, axis=0)
 
         # Reset the index
         concatenated_df.reset_index(drop=True, inplace=True)

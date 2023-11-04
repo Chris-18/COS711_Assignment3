@@ -107,9 +107,6 @@ if __name__ == "__main__":
                 writer.writerow(row)
 
         print(f'CSV file "{csv_file}" has been created with ID and extent columns.')
-        
-        print(predictions)
-        
 
 
    

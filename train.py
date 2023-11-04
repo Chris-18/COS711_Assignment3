@@ -152,6 +152,7 @@ if __name__ == "__main__":
 
     if run_type == "tune":
         tune_crop_model(model_type="logistic")
+        tune_crop_model(model_type="regression")
 
     # make predictions
     if run_type == "predict" and model == "logistic":

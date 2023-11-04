@@ -15,16 +15,15 @@ if __name__ == "__main__":
     csv_path = "data/content/Train.csv"  # Path to your training CSV file
     test_csv_path = "data/Test.csv"  # Path to your test CSV file
     root_dir = "data/content/train"  # Root directory where your images are stored
-    test_root_dir ="data/content/test"
-    batch_size = 64
-    num_epochs = 50
+    test_root_dir ="data/content/test" # Root directory where your test images are stored
+    batch_size = config.BATCH_SIZE
+    num_epochs = config.NUM_EPOCHS
     run_type = "csv"
-
-    input_file = 'labels_and_extents.csv'
-    output_file = 'output.csv'
 
     if(run_type=='csv'):
         # Open the input CSV file for reading
+        input_file = 'labels_and_extents.csv'
+        output_file = 'output.csv'
         with open(input_file, 'r', newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             
@@ -51,7 +50,7 @@ if __name__ == "__main__":
 
 
     data_module = CropDamageDataModule(csv_path, root_dir, test_csv_path, test_root_dir)
-    
+
     if run_type == "train":
         model = CropDamageModel()
         trainer = pl.Trainer(min_epochs=1, max_epochs=num_epochs, log_every_n_steps=50)

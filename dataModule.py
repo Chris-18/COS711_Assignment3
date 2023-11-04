@@ -2,7 +2,6 @@ from collections import Counter
 
 import pytorch_lightning as pl
 import pandas as pd
-import torchvision.transforms as transforms
 from pytorch_lightning.utilities.types import EVAL_DATALOADERS, TRAIN_DATALOADERS
 from torch.utils.data import DataLoader
 import torch
@@ -13,7 +12,7 @@ from dataset import CropDamageDataset
 
 
 class CropDamageDataModule(pl.LightningDataModule):
-    def __init__(self, csv_path, root_dir):
+    def __init__(self, csv_path, root_dir, test_csv_path, test_dir):
         super().__init__()
         self.csv_path = csv_path
         self.root_dir = root_dir
@@ -21,16 +20,8 @@ class CropDamageDataModule(pl.LightningDataModule):
         self.validation_dataset = None
         self.training_dataset = None
         self.probabilities = None
-        self.transform = transforms.Compose(
-            [
-                transforms.RandomVerticalFlip(),
-                transforms.RandomRotation(10),  
-                transforms.RandomHorizontalFlip(),
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-            ]
-        )
+        self.test_csv_path = test_csv_path
+        self.test_dir = test_dir
         self.prep_data()
 
     def prep_data(self):
@@ -65,26 +56,6 @@ class CropDamageDataModule(pl.LightningDataModule):
         self.validation_dataset = concatenated_df.sample(n=50, random_state=42)
         self.test_dataset = concatenated_df.sample(n=25, random_state=30)
 
-        # (
-        #     training_dataset,
-        #     validation_dataset,
-        #     test_dataset,
-        # ) = random_split(
-        #     full_dataset, [config.TRAIN_SIZE, config.VALIDATION_SIZE, config.TEST_SIZE]
-        # )
-        # self.training_dataset = full_dataset.iloc[training_dataset.indices]
-        # self.validation_dataset = full_dataset.iloc[validation_dataset.indices]
-        # self.test_dataset = full_dataset.iloc[test_dataset.indices]
-
-        extent_counts = Counter(self.training_dataset["extent"])
-        sort_counts = sorted(extent_counts.items())
-        probabilities = []
-        total = self.training_dataset.shape[0]
-        for sort_count in sort_counts:
-            current = sort_count[1]
-            probability = current / total
-            probabilities.append(probability)
-        self.probabilities = torch.tensor(probabilities)
 
     def extend_dataframe(self, original_df: pd.DataFrame, target_length):
         result_df = pd.DataFrame()
@@ -104,7 +75,7 @@ class CropDamageDataModule(pl.LightningDataModule):
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:
         train_data = CropDamageDataset(
-            self.training_dataset, self.root_dir, transform=self.transform
+            self.training_dataset, self.root_dir
         )
         return DataLoader(
             train_data,
@@ -116,7 +87,7 @@ class CropDamageDataModule(pl.LightningDataModule):
 
     def val_dataloader(self) -> EVAL_DATALOADERS:
         validation_data = CropDamageDataset(
-            self.validation_dataset, self.root_dir, transform=self.transform
+            self.validation_dataset, self.root_dir
         )
         return DataLoader(
             validation_data,
@@ -128,7 +99,7 @@ class CropDamageDataModule(pl.LightningDataModule):
 
     def test_dataloader(self) -> EVAL_DATALOADERS:
         test_data = CropDamageDataset(
-            self.test_dataset, self.root_dir, transform=self.transform
+            self.test_dataset, self.root_dir
         )
         return DataLoader(
             test_data,
@@ -137,3 +108,4 @@ class CropDamageDataModule(pl.LightningDataModule):
             num_workers=config.NUM_WORKERS,
             persistent_workers=True,
         )
+    

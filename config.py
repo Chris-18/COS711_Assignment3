@@ -2,12 +2,12 @@
 NUM_CLASSES = 1
 LEARNING_RATE = 0.001
 BATCH_SIZE = 64
-NUM_EPOCHS = 10
+NUM_EPOCHS = 50
 NUM_WORKERS = 9
 
 # Dataset Size Parameters
 # NB! The train, validation and test sizes must add up to the input size exactly.
-INPUT_SIZE = 20000
-TRAIN_SIZE = 19800
-VALIDATION_SIZE = 100
-TEST_SIZE = 100
+INPUT_SIZE = 26000
+TRAIN_SIZE = 24000
+VALIDATION_SIZE = 1000
+TEST_SIZE = 1000

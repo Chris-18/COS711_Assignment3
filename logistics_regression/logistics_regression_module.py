@@ -11,7 +11,7 @@ from torch.utils.data import random_split
 from dataset import CropDamageDataset
 
 
-class CropDamageDataModule(pl.LightningDataModule):
+class LogisticsRegressionModule(pl.LightningDataModule):
     def __init__(self, csv_path, root_dir):
         super().__init__()
         self.csv_path = csv_path
@@ -24,40 +24,41 @@ class CropDamageDataModule(pl.LightningDataModule):
 
     def prep_data(self):
         full_dataset = pd.read_csv(self.csv_path)
+        full_dataset['extent'] = (full_dataset['extent'] > 0).astype(int)
         full_dataset = full_dataset.sample(n=config.INPUT_SIZE, random_state=42)
-        full_dataset= full_dataset[full_dataset['extent'] > 0]
 
-        total_samples = len(full_dataset)
-
-        train_percentage = config.TRAIN_PERCENTAGE # 80% for training
-        test_percentage = config.TEST_PERCENTAGE  # 10% for testing
-
-        train_size = int(train_percentage * total_samples)
-        test_size = int(test_percentage * total_samples)
-        validation_size = total_samples - train_size - test_size
+        train_size = config.TRAIN_SIZE
+        validation_size = config.VALIDATION_SIZE
+        test_size = config.TEST_SIZE
 
         training_dataset, validation_dataset, test_dataset = random_split(
             full_dataset, [train_size, validation_size, test_size]
         )
+        
 
-        self.training_dataset = training_dataset
+        self.training_dataset = training_dataset.dataset.iloc[training_dataset.indices]
+
+        # Count the number of elements with extent 0/1
+        count_extent_0 = len(self.training_dataset[self.training_dataset['extent'] == 0])
+        count_extent_1 = len(self.training_dataset[self.training_dataset['extent'] == 1])
+
+        print("Count of extent 0:", count_extent_0)
+        print("Count of extent 1:", count_extent_1)
+        extended_datasets = []
+        extended_dataset = self.extend_dataframe(
+                training_dataset.dataset[training_dataset.dataset["extent"] == 1],  count_extent_0-count_extent_1
+            )
+        extended_datasets.append(extended_dataset)
+        extended_datasets.append(self.training_dataset[self.training_dataset["extent"] == 0])
+
+        concatenated_df = pd.concat(extended_datasets, axis=0)
+        concatenated_df.reset_index(drop=True, inplace=True)
+        self.training_dataset = concatenated_df
+
         self.validation_dataset = validation_dataset.dataset.iloc[validation_dataset.indices]
         self.test_dataset =  test_dataset.dataset.iloc[test_dataset.indices]
 
 
-        target_length = 1000
-        extended_datasets = []
-        for extent_value in range(0, 101, 10):
-            extent_dataset = self.extend_dataframe(
-                training_dataset.dataset[training_dataset.dataset["extent"] == extent_value], target_length
-            )
-            extended_datasets.append(extent_dataset)
-
-        concatenated_df = pd.concat(extended_datasets, axis=0)
-
-        # Reset the index
-        concatenated_df.reset_index(drop=True, inplace=True)
-        self.training_dataset = concatenated_df
 
 
     def extend_dataframe(self, original_df: pd.DataFrame, target_length):

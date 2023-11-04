@@ -2,6 +2,8 @@ import csv
 import pandas as pd
 import pytorch_lightning as pl
 from dataset import CropDamageDataset
+from logistics_regression.logistics_regression_model import LogisticsRegressionModel
+from logistics_regression.logistics_regression_module import LogisticsRegressionModule
 from model import CropDamageModel
 from dataModule import CropDamageDataModule
 import config
@@ -18,7 +20,8 @@ if __name__ == "__main__":
     test_root_dir ="data/content/test" # Root directory where your test images are stored
     batch_size = config.BATCH_SIZE
     num_epochs = config.NUM_EPOCHS
-    run_type = "csv"
+    run_type = "train"
+    model = "regression"
 
     if(run_type=='csv'):
         # Open the input CSV file for reading
@@ -49,17 +52,46 @@ if __name__ == "__main__":
         print("CSV file processed and saved as 'output.csv'")
 
 
-    data_module = CropDamageDataModule(csv_path, root_dir, test_csv_path, test_root_dir)
+    data_module = CropDamageDataModule(csv_path, root_dir)
+    logistics_module = LogisticsRegressionModule(csv_path, root_dir)
+    if run_type == "train" and model=='logistic':
+        #logistics regression
+        logistics_model = LogisticsRegressionModel()
+        logistics_trainer = pl.Trainer(min_epochs=1, max_epochs=20, log_every_n_steps=50, accelerator='gpu')
+        logistics_trainer.fit(logistics_model, logistics_module)
+        logistics_trainer.save_checkpoint("best_logistics_model.ckpt")
 
-    if run_type == "train":
+    if run_type == "train" and model=='regression':
         model = CropDamageModel()
         trainer = pl.Trainer(min_epochs=1, max_epochs=num_epochs, log_every_n_steps=50)
         trainer.fit(model, data_module)
-        # trainer.validate(model, data_module)
-        # trainer.test(model, data_module)
         trainer.save_checkpoint("best_model.ckpt")
+
     # make predictions
-    if run_type=='predict':
+    if run_type=='predict' and model=='logistic':
+        count = 0
+        model = LogisticsRegressionModel.load_from_checkpoint("best_logistics_model.ckpt")
+        model.eval()
+        correct = 0
+        incorrect = 0
+
+        with torch.no_grad():
+            for batch in logistics_module.test_dataloader():
+                x, y = batch
+                pred = model.forward(x)
+                pred = pred.squeeze()
+                pred_binary = (pred > 0.5).int()
+
+                # Compare predicted values with ground truth
+                num_correct = (pred_binary == y).sum().item()
+                num_incorrect = len(y) - num_correct
+
+                correct += num_correct
+                incorrect += num_incorrect
+        print(f"Number of correct predictions: {correct}")
+        print(f"Number of incorrect predictions: {incorrect}")
+
+    if run_type=='predict' and model == 'regression':
         count = 0
         model = CropDamageModel.load_from_checkpoint("best_model.ckpt")
         model.eval()

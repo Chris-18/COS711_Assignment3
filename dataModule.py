@@ -37,8 +37,8 @@ class CropDamageDataModule(pl.LightningDataModule):
         )
 
         self.training_dataset = training_dataset
-        self.validation_dataset = validation_dataset
-        self.test_dataset = test_dataset
+        self.validation_dataset = validation_dataset.dataset.iloc[validation_dataset.indices]
+        self.test_dataset =  test_dataset.dataset.iloc[test_dataset.indices]
 
         target_length = 1000
         extended_datasets = []
@@ -53,8 +53,6 @@ class CropDamageDataModule(pl.LightningDataModule):
         # Reset the index
         concatenated_df.reset_index(drop=True, inplace=True)
         self.training_dataset = concatenated_df
-        self.validation_dataset = concatenated_df.sample(n=50, random_state=42)
-        self.test_dataset = concatenated_df.sample(n=25, random_state=30)
 
 
     def extend_dataframe(self, original_df: pd.DataFrame, target_length):

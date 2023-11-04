@@ -8,30 +8,21 @@ import torch.optim as optim
 from torchmetrics import MeanSquaredError
 from torchvision import models
 
-import config
-
 
 class CropDamageModel(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, config):
         super(CropDamageModel, self).__init__()
         self.resnet = models.resnet18()
         in_features = self.resnet.fc.in_features
-        self.resnet.fc = nn.Linear(in_features, config.NUM_CLASSES)
+        self.resnet.fc = nn.Linear(in_features, 1)
         self.fitnessFunction = nn.L1Loss()
+        self.learning_rate = config["learning_rate"]
+        self.eval_loss = []
+        self.eval_mse = []
 
     def forward(self, x):
         # Get the class logits from the ResNet model
-        logits = self.resnet(x)
-
-        # # Apply softmax to convert logits to class probabilities
-        # probabilities = torch.softmax(logits, dim=1)
-        #
-        # # Get the class with the highest probability as the predicted class
-        # _, predicted_class = torch.max(probabilities, 1)
-        #
-        # results = predicted_class * 10
-
-        return logits
+        return self.resnet(x)
 
     def training_step(self, batch, batch_idx):
         loss, pred, y = self.common_step(batch, batch_idx)
@@ -40,12 +31,22 @@ class CropDamageModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         loss, pred, y = self.common_step(batch, batch_idx)
+        # mse = MeanSquaredError(pred, y)
+        # self.eval_mse.append(mse)
+        self.eval_loss.append(loss)
         self.log("val_loss", loss)
-        return loss
+        return {"val_loss": loss}
+
+    def on_validation_epoch_end(self):
+        avg_loss = torch.stack(self.eval_loss).mean()
+        # avg_mse = torch.stack(self.eval_mse).mean()
+        self.log("val_loss", avg_loss, sync_dist=True)
+        # self.log("log_mse", avg_mse, sync_dist=True)
+        self.eval_loss.clear()
+        # self.eval_mse.clear()
 
     def test_step(self, batch, batch_idx):
         loss, pred, y = self.common_step(batch, batch_idx)
-        
         self.log("test_loss", loss)
         return loss
 
@@ -57,16 +58,8 @@ class CropDamageModel(pl.LightningModule):
         return loss, pred, y
 
     def predict_step(self, x):
-        pred = self(x, None)
-        # Apply softmax to convert pred to class probabilities
-        probabilities = torch.softmax(pred, dim=1)
-
-        # Get the class with the highest probability as the predicted class
-        _, predicted_class = torch.max(probabilities, 1)
-
-        results = predicted_class * 10
-        return results
+        return self(x)
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=0.001)
+        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer

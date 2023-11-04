@@ -1,82 +1,171 @@
 import csv
+
 import pandas as pd
 import pytorch_lightning as pl
-from dataset import CropDamageDataset
+import ray
+import torch
+from ray import tune
+from ray.tune.schedulers import ASHAScheduler
+from torch.utils.data import DataLoader
+
+import config as c
+from dataModule import CropDamageDataModule
 from logistics_regression.logistics_regression_model import LogisticsRegressionModel
 from logistics_regression.logistics_regression_module import LogisticsRegressionModule
 from model import CropDamageModel
-from dataModule import CropDamageDataModule
-import config
-from torch.utils.data import DataLoader
-import torch
-
 from test_dataset import TestDataset
+from ray.tune.integration.pytorch_lightning import TuneReportCallback
+
+
+def train_crop_model(config, tuning, model_type, epochs):
+    if model_type == "regression":
+        data_module = CropDamageDataModule(
+            batch_size=config["batch_size"], tuning=tuning
+        )
+        model = CropDamageModel(config)
+    elif model_type == "logistic":
+        data_module = LogisticsRegressionModule(
+            batch_size=config["batch_size"], tuning=tuning
+        )
+        model = LogisticsRegressionModel(config)
+    else:
+        raise Exception("Invalid model type.")
+
+    metrics = {"val_loss": "val_loss"}
+    if tuning:
+        callbacks = [TuneReportCallback(metrics, on="validation_end")]
+    else:
+        callbacks = []
+
+    trainer = pl.Trainer(
+        min_epochs=1,
+        max_epochs=epochs,
+        log_every_n_steps=50,
+        callbacks=callbacks,
+    )
+    trainer.fit(model, data_module)
+    if not tuning:
+        if model_type == "regression":
+            trainer.save_checkpoint("best_regression_model.ckpt")
+        else:
+            trainer.save_checkpoint("best_logistics_model.ckpt")
+
+
+def tune_crop_model(model_type):
+    ray.init(local_mode=False)  # You can configure Ray according to your needs
+    trainable = tune.with_parameters(
+        train_crop_model,
+        tuning=True,
+        model_type=model_type,
+        epochs=c.TUNING_NUM_EPOCHS,
+    )
+    analysis = tune.run(
+        trainable,
+        config=c.SEARCH_SPACE,
+        num_samples=c.TUNING_NUM_SAMPLES,  # Number of trials
+        scheduler=ASHAScheduler(
+            metric="val_loss", mode="min", max_t=c.TUNING_NUM_EPOCHS
+        ),
+        # local_dir="./ray_tune_logs",  # Directory to store logs and checkpoints
+        name="crop_damage_hyperparameter_tuning",
+        resources_per_trial={
+            "cpu": 2,
+            "gpu": 0,
+        },  # Adjust based on your available resources
+    )
+
+    best_trial = analysis.get_best_trial("val_loss", "min", "last")
+    print(f"Best {model_type} trial config: {best_trial.config}")
+    print(
+        f"Best {model_type} trial final validation loss: {best_trial.last_result['val_loss']}"
+    )
+
+    # Save the results to a text file
+    with open(f"{model_type}_tuning_results.txt", "w") as file:
+        file.write(f"Best {model_type} trial config: {best_trial.config}\n")
+        file.write(
+            f"Best {model_type} trial final validation loss: {best_trial.last_result['val_loss']}\n"
+        )
+        file.write("All trial results:\n")
+        for trial in analysis.trials:
+            file.write(
+                f"Trial {trial.trial_id}: \nConfig: {trial.config}\nValidation Loss = {trial.last_result['val_loss']}\n\n"
+            )
+
+    return analysis
 
 
 if __name__ == "__main__":
     csv_path = "data/content/Train.csv"  # Path to your training CSV file
     test_csv_path = "data/Test.csv"  # Path to your test CSV file
     root_dir = "data/content/train"  # Root directory where your images are stored
-    test_root_dir ="data/content/test" # Root directory where your test images are stored
-    batch_size = config.BATCH_SIZE
-    num_epochs = config.NUM_EPOCHS
-    run_type = "train"
-    model = "regression"
+    test_root_dir = (
+        "data/content/test"  # Root directory where your test images are stored
+    )
 
-    if(run_type=='csv'):
+    run_type = "tune"
+    model = "logistic"
+
+    if run_type == "csv":
         # Open the input CSV file for reading
-        input_file = 'labels_and_extents.csv'
-        output_file = 'output.csv'
-        with open(input_file, 'r', newline='') as csvfile:
+        input_file = "labels_and_extents.csv"
+        output_file = "output.csv"
+        with open(input_file, "r", newline="") as csvfile:
             reader = csv.DictReader(csvfile)
-            
+
             # Define the header for the output CSV file
             fieldnames = reader.fieldnames
 
             # Open the output CSV file for writing
-            with open(output_file, 'w', newline='') as output_csvfile:
+            with open(output_file, "w", newline="") as output_csvfile:
                 writer = csv.DictWriter(output_csvfile, fieldnames=fieldnames)
                 writer.writeheader()
 
                 # Loop through the rows in the input CSV file
                 for row in reader:
-                    extent = float(row['extent'])
-                    
+                    extent = float(row["extent"])
+
                     # Check if the extent is less than 5, and set it to 0 if it is
                     if extent < 10:
-                        row['extent'] = 0
-                    
+                        row["extent"] = 0
+
                     # Write the modified row to the output CSV file
                     writer.writerow(row)
 
         print("CSV file processed and saved as 'output.csv'")
 
+    if run_type == "train":
+        if model == "logistic":
+            train_crop_model(
+                config=c.LR_DEFAULT_CONFIG,
+                tuning=False,
+                model_type="logistic",
+                epochs=c.NUM_EPOCHS,
+            )
+        elif model == "regression":
+            train_crop_model(
+                config=c.R_DEFAULT_CONFIG,
+                tuning=False,
+                model_type="regression",
+                epochs=c.NUM_EPOCHS,
+            )
 
-    data_module = CropDamageDataModule(csv_path, root_dir)
-    logistics_module = LogisticsRegressionModule(csv_path, root_dir)
-    if run_type == "train" and model=='logistic':
-        #logistics regression
-        logistics_model = LogisticsRegressionModel()
-        logistics_trainer = pl.Trainer(min_epochs=1, max_epochs=20, log_every_n_steps=50, accelerator='gpu')
-        logistics_trainer.fit(logistics_model, logistics_module)
-        logistics_trainer.save_checkpoint("best_logistics_model.ckpt")
-
-    if run_type == "train" and model=='regression':
-        model = CropDamageModel()
-        trainer = pl.Trainer(min_epochs=1, max_epochs=num_epochs, log_every_n_steps=50)
-        trainer.fit(model, data_module)
-        trainer.save_checkpoint("best_model.ckpt")
+    if run_type == "tune":
+        tune_crop_model(model_type="logistic")
 
     # make predictions
-    if run_type=='predict' and model=='logistic':
+    if run_type == "predict" and model == "logistic":
+        data_module = LogisticsRegressionModule(batch_size=c.LR_BATCH_SIZE)
         count = 0
-        model = LogisticsRegressionModel.load_from_checkpoint("best_logistics_model.ckpt")
+        model = LogisticsRegressionModel.load_from_checkpoint(
+            "best_logistics_model.ckpt"
+        )
         model.eval()
         correct = 0
         incorrect = 0
 
         with torch.no_grad():
-            for batch in logistics_module.test_dataloader():
+            for batch in data_module.test_dataloader():
                 x, y = batch
                 pred = model.forward(x)
                 pred = pred.squeeze()
@@ -91,7 +180,8 @@ if __name__ == "__main__":
         print(f"Number of correct predictions: {correct}")
         print(f"Number of incorrect predictions: {incorrect}")
 
-    if run_type=='predict' and model == 'regression':
+    if run_type == "predict" and model == "regression":
+        data_module = CropDamageDataModule(batch_size=c.R_BATCH_SIZE)
         count = 0
         model = CropDamageModel.load_from_checkpoint("best_model.ckpt")
         model.eval()
@@ -105,16 +195,18 @@ if __name__ == "__main__":
                 count = count + 1
                 if count == 2:
                     break
-        
-    if run_type=='test':
+
+    if run_type == "test":
         count = 0
-        
+
         model = CropDamageModel.load_from_checkpoint("best_model.ckpt")
         model.eval()
         predictions = []
         full_dataset = pd.read_csv(test_csv_path)
         test_dataset = TestDataset(full_dataset, test_root_dir)
-        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+        test_dataloader = DataLoader(
+            test_dataset, batch_size=c.R_BATCH_SIZE, shuffle=False
+        )
         data = []
         with torch.no_grad():
             for batch in test_dataloader:
@@ -122,16 +214,21 @@ if __name__ == "__main__":
                 pred = model.forward(x)
                 pred = pred.squeeze()
                 predictions.extend(pred.cpu().numpy())
-                combined_data = (zip(label, pred))
-                data.extend([{'ID': label, 'extent': value.item()} for label, value in combined_data])
+                combined_data = zip(label, pred)
+                data.extend(
+                    [
+                        {"ID": label, "extent": value.item()}
+                        for label, value in combined_data
+                    ]
+                )
                 print(data)
 
         # Define the CSV file name
-        csv_file = 'labels_and_extents.csv'
+        csv_file = "labels_and_extents.csv"
 
         # Write the data to a CSV file
-        with open(csv_file, 'w', newline='') as csvfile:
-            fieldnames = ['ID', 'extent']
+        with open(csv_file, "w", newline="") as csvfile:
+            fieldnames = ["ID", "extent"]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             writer.writeheader()
@@ -139,6 +236,3 @@ if __name__ == "__main__":
                 writer.writerow(row)
 
         print(f'CSV file "{csv_file}" has been created with ID and extent columns.')
-
-
-   

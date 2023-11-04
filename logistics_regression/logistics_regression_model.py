@@ -9,18 +9,17 @@ from torchmetrics import MeanSquaredError
 from torchvision import models
 import torch.nn.functional as F
 
-import config
-
 
 class LogisticsRegressionModel(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, config):
         super(LogisticsRegressionModel, self).__init__()
         self.resnet = models.resnet18()
         in_features = self.resnet.fc.in_features
         self.resnet.fc = nn.Linear(in_features, 1)
         self.sigmoid = nn.Sigmoid()
-        # self.fitnessFunction = nn.BCELoss() 
-
+        self.learning_rate = config["learning_rate"]
+        self.eval_loss = []
+        # self.fitnessFunction = nn.BCELoss()
 
     def forward(self, x):
         logits = self.resnet(x)
@@ -34,12 +33,21 @@ class LogisticsRegressionModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         loss, pred, y = self.common_step(batch, batch_idx)
+        self.eval_loss.append(loss)
         self.log("val_loss", loss)
         return loss
 
+    def on_validation_epoch_end(self):
+        avg_loss = torch.stack(self.eval_loss).mean()
+        # avg_mse = torch.stack(self.eval_mse).mean()
+        self.log("val_loss", avg_loss, sync_dist=True)
+        # self.log("log_mse", avg_mse, sync_dist=True)
+        self.eval_loss.clear()
+        # self.eval_mse.clear()
+
     def test_step(self, batch, batch_idx):
         loss, pred, y = self.common_step(batch, batch_idx)
-        
+
         self.log("test_loss", loss)
         return loss
 
@@ -48,11 +56,11 @@ class LogisticsRegressionModel(pl.LightningModule):
         pred = self(x)
         predictions = (pred >= 0.5).float()
         predictions = pred.squeeze()
-        y= y.to(predictions.dtype)
+        y = y.to(predictions.dtype)
         loss = nn.BCELoss()(predictions, y)
         self.log("val_loss", loss)
-        return loss,pred, y
+        return loss, pred, y
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=0.001)
+        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer

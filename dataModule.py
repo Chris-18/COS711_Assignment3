@@ -49,7 +49,7 @@ class CropDamageDataModule(pl.LightningDataModule):
         self.test_dataset = test_dataset.dataset.iloc[test_dataset.indices]
 
         if self.is_tuning:
-            target_length = 100
+            target_length = 200
         else:
             target_length = 1000
         extended_datasets = []

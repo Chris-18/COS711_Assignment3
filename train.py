@@ -46,7 +46,7 @@ def train_crop_model(config, tuning, model_type, epochs, seed):
         callbacks=callbacks,
     )
     trainer.fit(model, data_module)
-    if tuning:
+    if not tuning:
         if model_type == "regression":
             trainer.save_checkpoint("best_regression_model.ckpt")
         else:
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     )
 
     run_type = "train"
-    model = "logistic"
+    model = "regression"
 
     if run_type == "csv":
         # Open the input CSV file for reading

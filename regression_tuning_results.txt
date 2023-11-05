@@ -1,0 +1,23 @@
+Best regression trial config: {'learning_rate': 0.0006769577841237074, 'batch_size': 32}
+Best regression trial final validation loss: 18.538522720336914
+All trial results:
+Trial 9d01c_00000: 
+Config: {'learning_rate': 0.03500644691757492, 'batch_size': 64}
+Validation Loss = 42.193660736083984
+
+Trial 9d01c_00001: 
+Config: {'learning_rate': 0.0006769577841237074, 'batch_size': 32}
+Validation Loss = 18.538522720336914
+
+Trial 9d01c_00002: 
+Config: {'learning_rate': 0.0041039055232860375, 'batch_size': 32}
+Validation Loss = 20.18321990966797
+
+Trial 9d01c_00003: 
+Config: {'learning_rate': 0.0014743660432384928, 'batch_size': 32}
+Validation Loss = 24.29336166381836
+
+Trial 9d01c_00004: 
+Config: {'learning_rate': 0.00048052569535037996, 'batch_size': 64}
+Validation Loss = 28.650371551513672
+

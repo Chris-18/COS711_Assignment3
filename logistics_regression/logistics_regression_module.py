@@ -8,7 +8,7 @@ from dataset import CropDamageDataset
 
 
 class LogisticsRegressionModule(pl.LightningDataModule):
-    def __init__(self, batch_size, tuning=False):
+    def __init__(self, batch_size, seed, tuning=False):
         super().__init__()
         self.csv_path = c.CSV_FILE
         self.root_dir = c.ROOT_DIR
@@ -18,12 +18,13 @@ class LogisticsRegressionModule(pl.LightningDataModule):
         self.probabilities = None
         self.batch_size = batch_size
         self.is_tuning = tuning
+        self.seed = seed
         self.prep_data()
 
     def prep_data(self):
         full_dataset = pd.read_csv(self.csv_path)
         full_dataset["extent"] = (full_dataset["extent"] > 0).astype(int)
-        full_dataset = full_dataset.sample(n=c.INPUT_SIZE, random_state=42)
+        full_dataset = full_dataset.sample(n=c.INPUT_SIZE, random_state=self.seed)
 
         train_size = c.TRAIN_SIZE
         validation_size = c.VALIDATION_SIZE
@@ -37,7 +38,7 @@ class LogisticsRegressionModule(pl.LightningDataModule):
 
         zero_dataset = self.training_dataset[self.training_dataset["extent"] == 0]
         if self.is_tuning:
-            zero_dataset = zero_dataset.sample(n=2000, random_state=42)
+            zero_dataset = zero_dataset.sample(n=2000, random_state=self.seed)
 
         one_dataset = self.training_dataset[self.training_dataset["extent"] == 1]
 

@@ -16,17 +16,18 @@ from model import CropDamageModel
 from test_dataset import TestDataset
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
 from ray.train import CheckpointConfig
+import numpy as np
 
 
-def train_crop_model(config, tuning, model_type, epochs):
+def train_crop_model(config, tuning, model_type, epochs, seed):
     if model_type == "regression":
         data_module = CropDamageDataModule(
-            batch_size=config["batch_size"], tuning=tuning
+            batch_size=config["batch_size"], seed=seed, tuning=tuning
         )
         model = CropDamageModel(config)
     elif model_type == "logistic":
         data_module = LogisticsRegressionModule(
-            batch_size=config["batch_size"], tuning=tuning
+            batch_size=config["batch_size"], seed=seed, tuning=tuning
         )
         model = LogisticsRegressionModel(config)
     else:
@@ -45,20 +46,28 @@ def train_crop_model(config, tuning, model_type, epochs):
         callbacks=callbacks,
     )
     trainer.fit(model, data_module)
-    if not tuning:
+    if tuning:
         if model_type == "regression":
             trainer.save_checkpoint("best_regression_model.ckpt")
         else:
             trainer.save_checkpoint("best_logistics_model.ckpt")
 
+        train_loss = trainer.callback_metrics["train_loss"]
+        val_loss = trainer.callback_metrics["val_loss"]
+        print(f"Train_loss: {train_loss}")
+        print(f"Val_loss: {val_loss}")
 
-def tune_crop_model(model_type):
+        return {"seed": seed, "train_loss": train_loss, "val_loss": val_loss}
+
+
+def tune_crop_model(model_type, test_name):
     ray.init(local_mode=False)  # You can configure Ray according to your needs
     trainable = tune.with_parameters(
         train_crop_model,
         tuning=True,
         model_type=model_type,
         epochs=c.TUNING_NUM_EPOCHS,
+        seed=42,
     )
     analysis = tune.run(
         trainable,
@@ -71,7 +80,7 @@ def tune_crop_model(model_type):
         checkpoint_config=CheckpointConfig(num_to_keep=2),
         name=f"crop_damage_{model_type}_hyperparameter_tuning",
         resources_per_trial={
-            "cpu": 2,
+            "cpu": 3,
             "gpu": 0,
         },  # Adjust based on your available resources
         reuse_actors=True,
@@ -84,7 +93,7 @@ def tune_crop_model(model_type):
     )
 
     # Save the results to a text file
-    with open(f"{model_type}_tuning_results.txt", "w") as file:
+    with open(f"{model_type}_{test_name}_tuning_results.txt", "w") as file:
         file.write(f"Best {model_type} trial config: {best_trial.config}\n")
         file.write(
             f"Best {model_type} trial final validation loss: {best_trial.last_result['val_loss']}\n"
@@ -106,8 +115,8 @@ if __name__ == "__main__":
         "data/content/test"  # Root directory where your test images are stored
     )
 
-    run_type = "tune"
-    model = "regression"
+    run_type = "train"
+    model = "logistic"
 
     if run_type == "csv":
         # Open the input CSV file for reading
@@ -138,23 +147,53 @@ if __name__ == "__main__":
         print("CSV file processed and saved as 'output.csv'")
 
     if run_type == "train":
-        if model == "logistic":
-            train_crop_model(
-                config=c.LR_DEFAULT_CONFIG,
-                tuning=False,
-                model_type="logistic",
-                epochs=c.NUM_EPOCHS,
-            )
-        elif model == "regression":
-            train_crop_model(
-                config=c.R_DEFAULT_CONFIG,
-                tuning=False,
-                model_type="regression",
-                epochs=c.NUM_EPOCHS,
-            )
+        seeds = [42, 54, 6, 8, 4]
+        results = []
+        for seed in seeds:
+            if model == "logistic":
+                result = train_crop_model(
+                    config=c.LR_DEFAULT_CONFIG,
+                    tuning=False,
+                    model_type="logistic",
+                    epochs=c.NUM_EPOCHS,
+                    seed=seed,
+                )
+            elif model == "regression":
+                result = train_crop_model(
+                    config=c.R_DEFAULT_CONFIG,
+                    tuning=False,
+                    model_type="regression",
+                    epochs=c.NUM_EPOCHS,
+                    seed=seed,
+                )
+            else:
+                raise Exception("Invalid model type given")
+
+            results.append(result)
+
+            # Extract train_loss and val_loss values into separate lists
+            train_loss_values = [item["train_loss"] for item in results]
+            val_loss_values = [item["val_loss"] for item in results]
+
+            # Calculate the means and standard deviations for train_loss and val_loss
+            train_loss_mean = np.mean(train_loss_values)
+            val_loss_mean = np.mean(val_loss_values)
+            train_loss_std = np.std(train_loss_values)
+            val_loss_std = np.std(val_loss_values)
+
+            with open(f"{model}_training_results.txt", "w") as file:
+                for r in results:
+                    file.write(
+                        f"Seed: {r['seed']}\nTraining_loss: {r['train_loss']}\nValidation_loss: {r['val_loss']}\n\n"
+                    )
+                # write the results
+                file.write(f"Mean for Train Loss: {train_loss_mean}\n")
+                file.write(f"Standard Deviation for Train Loss: {train_loss_std}\n")
+                file.write(f"Mean for Validation Loss: {val_loss_mean}\n")
+                file.write(f"Standard Deviation for Validation Loss: {val_loss_std}\n")
 
     if run_type == "tune":
-        tune_crop_model(model_type=model)
+        tune_crop_model(model_type=model, test_name="optimizer")
 
     # make predictions
     if run_type == "predict" and model == "logistic":

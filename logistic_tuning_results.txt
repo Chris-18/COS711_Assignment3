@@ -1,0 +1,23 @@
+Best logistic trial config: {'learning_rate': 0.007399749912176894, 'batch_size': 32}
+Best logistic trial final validation loss: 0.36734503507614136
+All trial results:
+Trial 1cef4_00000: 
+Config: {'learning_rate': 0.00010426230584780835, 'batch_size': 64}
+Validation Loss = 0.7481608390808105
+
+Trial 1cef4_00001: 
+Config: {'learning_rate': 0.007399749912176894, 'batch_size': 32}
+Validation Loss = 0.36734503507614136
+
+Trial 1cef4_00002: 
+Config: {'learning_rate': 0.029397308580613256, 'batch_size': 64}
+Validation Loss = 0.7861676812171936
+
+Trial 1cef4_00003: 
+Config: {'learning_rate': 0.011830136679203693, 'batch_size': 64}
+Validation Loss = 0.8458470106124878
+
+Trial 1cef4_00004: 
+Config: {'learning_rate': 0.04328406143354049, 'batch_size': 32}
+Validation Loss = 0.7256390452384949
+

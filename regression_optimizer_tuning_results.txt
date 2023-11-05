@@ -1,0 +1,15 @@
+Best regression trial config: {'learning_rate': 0.001, 'batch_size': 64, 'optimizer': 'adam'}
+Best regression trial final validation loss: 17.49335479736328
+All trial results:
+Trial 564e0_00000: 
+Config: {'learning_rate': 0.001, 'batch_size': 64, 'optimizer': 'adagrad'}
+Validation Loss = 30.18956184387207
+
+Trial 564e0_00001: 
+Config: {'learning_rate': 0.001, 'batch_size': 64, 'optimizer': 'adam'}
+Validation Loss = 17.49335479736328
+
+Trial 564e0_00002: 
+Config: {'learning_rate': 0.001, 'batch_size': 64, 'optimizer': 'adagrad'}
+Validation Loss = 27.659738540649414
+

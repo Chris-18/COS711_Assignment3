@@ -19,9 +19,9 @@ VALIDATION_SIZE = 1000
 TEST_SIZE = 1000
 
 # Not deleting above - percentage instead
-TRAIN_PERCENTAGE = 0.9
+TRAIN_PERCENTAGE = 0.95
 VALIDATION_PERCENTAGE = 0.05
-TEST_PERCENTAGE = 0.05
+TEST_PERCENTAGE = 0.00
 
 # Data module parameters
 CSV_FILE = "/Users/christian/Desktop/Personal/University/COS711/Assignment3/data/content/Train.csv"
@@ -41,10 +41,10 @@ R_DEFAULT_CONFIG = {
     "optimizer": "adam",
 }
 SEARCH_SPACE = {
-    "learning_rate": tune.loguniform(1e-4, 1e-1),
-    # "learning_rate": tune.choice([0.001, 0.0006769577841237074]),
+    # "learning_rate": tune.loguniform(1e-4, 1e-1),
+    "learning_rate": tune.choice([0.001]),
     "batch_size": tune.choice([64]),
-    "optimizer": tune.choice(["adam", "sgd"]),
+    "optimizer": tune.choice(["adam", "sgd", "adagrad"]),
 }
 TUNING_NUM_EPOCHS = 20
 TUNING_NUM_SAMPLES = 5

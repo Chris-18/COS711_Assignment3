@@ -1,0 +1,9 @@
+Seed: 42
+Training_loss: 20.633146286010742
+Validation_loss: 36.47004699707031
+
+Seed: 54
+Training_loss: 21.215909957885742
+Validation_loss: 17.87260627746582
+
+Mean for Train Loss: 20.924528121948242Standard Deviation for Train Loss: 0.2913818359375Mean for Validation Loss: 27.17132568359375Standard Deviation for Validation Loss: 9.298720359802246

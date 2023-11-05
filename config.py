@@ -2,11 +2,11 @@ from ray import tune
 
 # Training Parameters
 NUM_CLASSES = 1
-NUM_EPOCHS = 5
+NUM_EPOCHS = 25
 NUM_WORKERS = 9
 # Logistic Regression
-LR_LEARNING_RATE = 0.001
-LR_BATCH_SIZE = 64
+LR_LEARNING_RATE = 0.007399749912176894
+LR_BATCH_SIZE = 32
 # Regression
 R_LEARNING_RATE = 0.001
 R_BATCH_SIZE = 64
@@ -30,11 +30,21 @@ ROOT_DIR = (
 )
 
 # Hyperparameter tuning
-LR_DEFAULT_CONFIG = {"learning_rate": LR_LEARNING_RATE, "batch_size": LR_BATCH_SIZE}
-R_DEFAULT_CONFIG = {"learning_rate": R_LEARNING_RATE, "batch_size": R_BATCH_SIZE}
+LR_DEFAULT_CONFIG = {
+    "learning_rate": LR_LEARNING_RATE,
+    "batch_size": LR_BATCH_SIZE,
+    "optimizer": "adam",
+}
+R_DEFAULT_CONFIG = {
+    "learning_rate": R_LEARNING_RATE,
+    "batch_size": R_BATCH_SIZE,
+    "optimizer": "adam",
+}
 SEARCH_SPACE = {
     "learning_rate": tune.loguniform(1e-4, 1e-1),
-    "batch_size": tune.choice([32, 64]),
+    # "learning_rate": tune.choice([0.001, 0.0006769577841237074]),
+    "batch_size": tune.choice([64]),
+    "optimizer": tune.choice(["adam", "sgd"]),
 }
 TUNING_NUM_EPOCHS = 20
-TUNING_NUM_SAMPLES = 10
+TUNING_NUM_SAMPLES = 5

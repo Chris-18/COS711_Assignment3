@@ -19,6 +19,7 @@ class CropDamageModel(pl.LightningModule):
         self.learning_rate = config["learning_rate"]
         self.eval_loss = []
         self.eval_mse = []
+        self.optimizer = config["optimizer"]
 
     def forward(self, x):
         # Get the class logits from the ResNet model
@@ -61,5 +62,12 @@ class CropDamageModel(pl.LightningModule):
         return self(x)
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
+        if self.optimizer == "adam":
+            optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
+        elif self.optimizer == "sgd":
+            optimizer = optim.SGD(self.parameters(), lr=self.learning_rate)
+        elif self.optimizer == "adagrad":
+            optimizer = optim.Adagrad(self.parameters(), lr=self.learning_rate)
+        else:
+            raise Exception("Invalid optimizer")
         return optimizer

@@ -15,6 +15,7 @@ from logistics_regression.logistics_regression_module import LogisticsRegression
 from model import CropDamageModel
 from test_dataset import TestDataset
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
+from ray.train import CheckpointConfig
 
 
 def train_crop_model(config, tuning, model_type, epochs):
@@ -67,11 +68,13 @@ def tune_crop_model(model_type):
             metric="val_loss", mode="min", max_t=c.TUNING_NUM_EPOCHS
         ),
         # local_dir="./ray_tune_logs",  # Directory to store logs and checkpoints
-        name="crop_damage_hyperparameter_tuning",
+        checkpoint_config=CheckpointConfig(num_to_keep=2),
+        name=f"crop_damage_{model_type}_hyperparameter_tuning",
         resources_per_trial={
             "cpu": 2,
             "gpu": 0,
         },  # Adjust based on your available resources
+        reuse_actors=True,
     )
 
     best_trial = analysis.get_best_trial("val_loss", "min", "last")
@@ -104,7 +107,7 @@ if __name__ == "__main__":
     )
 
     run_type = "tune"
-    model = "logistic"
+    model = "regression"
 
     if run_type == "csv":
         # Open the input CSV file for reading
@@ -151,8 +154,7 @@ if __name__ == "__main__":
             )
 
     if run_type == "tune":
-        tune_crop_model(model_type="logistic")
-        tune_crop_model(model_type="regression")
+        tune_crop_model(model_type=model)
 
     # make predictions
     if run_type == "predict" and model == "logistic":

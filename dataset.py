@@ -22,20 +22,31 @@ class CropDamageDataset(Dataset):
             transforms.RandomVerticalFlip(),
             transforms.RandomRotation(10),
             transforms.RandomHorizontalFlip(),
-            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2), 
             transforms.RandomResizedCrop(224, scale=(0.8, 1.0), ratio=(0.75, 1.333)),
         ]
 
-        # Choose a random transformation from the list
-        selected_transform = random.choice(random_transforms)
+        adjust_tranformations = [
+            transforms.GaussianBlur(kernel_size=[5, 5]),
+            transforms.RandomAutocontrast(),
+            transforms.RandomEqualize(),
+            transforms.ColorJitter(
+                brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2
+            ),
+            transforms.RandomAdjustSharpness(sharpness_factor=0.5),
+        ]
 
-        # Define the complete transformation pipeline
-        transform = transforms.Compose([
-            selected_transform,
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ])
+        selected_transform = random.choice(random_transforms)
+        selected_adjust_transform = random.choice(adjust_tranformations)
+
+        transform = transforms.Compose(
+            [
+                selected_transform,
+                selected_adjust_transform,
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+            ]
+        )
 
         image = transform(image)
 

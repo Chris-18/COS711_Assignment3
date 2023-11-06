@@ -206,7 +206,7 @@ if __name__ == "__main__":
         data = pd.read_csv(
             "/Users/christian/Desktop/Personal/University/COS711/Assignment3/data/Test.csv"
         )
-        data = data.sample(n=10, random_state=42)
+        # data = data.sample(n=10, random_state=42)
         test_data = CropDamageDataset(
             data,
             "/Users/christian/Desktop/Personal/University/COS711/Assignment3/data/content/test",

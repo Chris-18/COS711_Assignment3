@@ -106,13 +106,11 @@ def tune_crop_model(model_type, test_name):
 
 if __name__ == "__main__":
     csv_path = "data/content/Train.csv"  # Path to your training CSV file
-    test_csv_path = "data/Test.csv"  # Path to your test CSV file
+    test_csv_path = "/Users/kellymorrison/Documents/University/Semester_2_2023/Cos711/Assignment3/COS711_Assignment3/data/Test.csv"  # Path to your test CSV file
     root_dir = "data/content/train"  # Root directory where your images are stored
-    test_root_dir = (
-        "data/content/test"  # Root directory where your test images are stored
-    )
+    test_root_dir = "/Users/kellymorrison/Documents/University/Semester_2_2023/Cos711/Assignment3/COS711_Assignment3/data/content/test"
 
-    run_type = "predict_final"
+    run_type = "csv"
     model = "regression"
 
     if run_type == "csv":
@@ -135,8 +133,8 @@ if __name__ == "__main__":
                     extent = float(row["extent"])
 
                     # Check if the extent is less than 5, and set it to 0 if it is
-                    if extent < 10:
-                        row["extent"] = 0
+                    
+                    row["extent"] = round(extent / 10) * 10
 
                     # Write the modified row to the output CSV file
                     writer.writerow(row)
@@ -204,26 +202,19 @@ if __name__ == "__main__":
         r_m.eval()
 
         data = pd.read_csv(
-            "/Users/christian/Desktop/Personal/University/COS711/Assignment3/data/Test.csv"
+           test_csv_path
         )
         # data = data.sample(n=10, random_state=42)
-        test_data = CropDamageDataset(
-            data,
-            "/Users/christian/Desktop/Personal/University/COS711/Assignment3/data/content/test",
-            predicting=True,
-        )
-        dl = DataLoader(
-            test_data,
-            batch_size=1,
-            shuffle=False,
-            num_workers=c.NUM_WORKERS,
-            persistent_workers=True,
+        full_dataset = data
+        test_dataset = TestDataset(full_dataset, test_root_dir)
+        test_dataloader = DataLoader(
+            test_dataset, batch_size=1, shuffle=False
         )
 
         data = []
 
         with torch.no_grad():
-            for batch in dl:
+            for batch in test_dataloader:
                 x, y = batch
                 pred = lr_m.forward(x)
                 pred = pred.squeeze()

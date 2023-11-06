@@ -7,10 +7,11 @@ import torch.nn as nn
 import torch.optim as optim
 from torchmetrics import MeanSquaredError
 from torchvision import models
+import config as c
 
 
 class CropDamageModel(pl.LightningModule):
-    def __init__(self, config):
+    def __init__(self, config=c.R_DEFAULT_CONFIG):
         super(CropDamageModel, self).__init__()
         self.resnet = models.resnet18()
         in_features = self.resnet.fc.in_features

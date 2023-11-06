@@ -6,9 +6,10 @@ import torchvision.transforms as transforms
 
 
 class CropDamageDataset(Dataset):
-    def __init__(self, data, root_dir):
+    def __init__(self, data, root_dir, predicting=False):
         self.data = data
         self.root_dir = root_dir
+        self.predicting = predicting
 
     def __len__(self):
         return len(self.data)
@@ -17,7 +18,10 @@ class CropDamageDataset(Dataset):
         file_name = self.data.iloc[idx, 1]
         img_name = os.path.join(self.root_dir, file_name)
         image = Image.open(img_name)
-        label = int(self.data.iloc[idx, 4])
+        if self.predicting:
+            label = file_name
+        else:
+            label = int(self.data.iloc[idx, 4])
         random_transforms = [
             transforms.RandomVerticalFlip(),
             transforms.RandomRotation(10),

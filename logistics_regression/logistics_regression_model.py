@@ -8,10 +8,11 @@ import torch.optim as optim
 from torchmetrics import MeanSquaredError
 from torchvision import models
 import torch.nn.functional as F
+import config as c
 
 
 class LogisticsRegressionModel(pl.LightningModule):
-    def __init__(self, config):
+    def __init__(self, config=c.LR_DEFAULT_CONFIG):
         super(LogisticsRegressionModel, self).__init__()
         self.resnet = models.resnet18()
         in_features = self.resnet.fc.in_features

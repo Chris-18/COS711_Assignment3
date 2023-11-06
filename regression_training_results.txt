@@ -1,9 +1,24 @@
 Seed: 42
-Training_loss: 20.633146286010742
-Validation_loss: 36.47004699707031
+Training_loss: 14.667292594909668
+Validation_loss: 19.21530532836914
 
 Seed: 54
-Training_loss: 21.215909957885742
-Validation_loss: 17.87260627746582
+Training_loss: 14.500040054321289
+Validation_loss: 16.326139450073242
 
-Mean for Train Loss: 20.924528121948242Standard Deviation for Train Loss: 0.2913818359375Mean for Validation Loss: 27.17132568359375Standard Deviation for Validation Loss: 9.298720359802246
+Seed: 6
+Training_loss: 14.329506874084473
+Validation_loss: 16.356231689453125
+
+Seed: 8
+Training_loss: 14.539692878723145
+Validation_loss: 15.361339569091797
+
+Seed: 4
+Training_loss: 14.317276954650879
+Validation_loss: 16.003173828125
+
+Mean for Train Loss: 14.4707612991333
+Standard Deviation for Train Loss: 0.13247159123420715
+Mean for Validation Loss: 16.65243911743164
+Standard Deviation for Validation Loss: 1.3304868936538696

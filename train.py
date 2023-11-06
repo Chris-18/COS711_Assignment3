@@ -17,6 +17,7 @@ from test_dataset import TestDataset
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
 from ray.train import CheckpointConfig
 import numpy as np
+from dataset import CropDamageDataset
 
 
 def train_crop_model(config, tuning, model_type, epochs, seed):
@@ -47,11 +48,7 @@ def train_crop_model(config, tuning, model_type, epochs, seed):
     )
     trainer.fit(model, data_module)
     if not tuning:
-        if model_type == "regression":
-            trainer.save_checkpoint("best_regression_model.ckpt")
-        else:
-            trainer.save_checkpoint("best_logistics_model.ckpt")
-
+        trainer.save_checkpoint(f"{model_type}_{seed}_model.ckpt")
         train_loss = trainer.callback_metrics["train_loss"]
         val_loss = trainer.callback_metrics["val_loss"]
         print(f"Train_loss: {train_loss}")
@@ -115,7 +112,7 @@ if __name__ == "__main__":
         "data/content/test"  # Root directory where your test images are stored
     )
 
-    run_type = "train"
+    run_type = "predict_final"
     model = "regression"
 
     if run_type == "csv":
@@ -194,6 +191,52 @@ if __name__ == "__main__":
 
     if run_type == "tune":
         tune_crop_model(model_type=model, test_name="optimizer")
+
+    if run_type == "predict_final":
+        # lr_dm = LogisticsRegressionModule(batch_size=c.LR_BATCH_SIZE, seed=c.LR_SEED)
+        # lr_m = LogisticsRegressionModel(config=c.LR_DEFAULT_CONFIG)
+        lr_m = LogisticsRegressionModel.load_from_checkpoint(
+            "best_logistics_model.ckpt"
+        )
+        lr_m.eval()
+
+        # r_dm = CropDamageDataModule(batch_size=c.R_BATCH_SIZE, seed=c.R_SEED)
+        # r_m = CropDamageModel(config=c.R_DEFAULT_CONFIG)
+        r_m = CropDamageModel.load_from_checkpoint("regression_8_model.ckpt")
+        r_m.eval()
+
+        data = pd.read_csv(
+            "/Users/christian/Desktop/Personal/University/COS711/Assignment3/data/Test.csv"
+        )
+        data = data.sample(n=10, random_state=42)
+        test_data = CropDamageDataset(
+            data,
+            "/Users/christian/Desktop/Personal/University/COS711/Assignment3/data/content/test",
+            predicting=True,
+        )
+        dl = DataLoader(
+            test_data,
+            batch_size=1,
+            shuffle=False,
+            num_workers=c.NUM_WORKERS,
+            persistent_workers=True,
+        )
+
+        with torch.no_grad():
+            for batch in dl:
+                x, y = batch
+                pred = lr_m.forward(x)
+                pred = pred.squeeze()
+                pred_binary = (pred > 0.5).int()
+                value = pred_binary.item()
+                if value > 0:
+                    pred = r_m.forward(x)
+                    pred = pred.squeeze()
+                    answer = pred.item()
+                else:
+                    answer = 0
+
+                print(f"Image: {y.item()} Predicted: {answer}\n")
 
     # make predictions
     if run_type == "predict" and model == "logistic":

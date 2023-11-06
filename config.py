@@ -2,14 +2,16 @@ from ray import tune
 
 # Training Parameters
 NUM_CLASSES = 1
-NUM_EPOCHS = 25
+NUM_EPOCHS = 30
 NUM_WORKERS = 9
 # Logistic Regression
 LR_LEARNING_RATE = 0.007399749912176894
 LR_BATCH_SIZE = 32
+LR_SEED = 42
 # Regression
 R_LEARNING_RATE = 0.001
 R_BATCH_SIZE = 64
+R_SEED = 42
 
 # Dataset Size Parameters
 # NB! The train, validation and test sizes must add up to the input size exactly.
@@ -19,8 +21,8 @@ VALIDATION_SIZE = 1000
 TEST_SIZE = 1000
 
 # Not deleting above - percentage instead
-TRAIN_PERCENTAGE = 0.95
-VALIDATION_PERCENTAGE = 0.05
+TRAIN_PERCENTAGE = 0.85
+VALIDATION_PERCENTAGE = 0.15
 TEST_PERCENTAGE = 0.00
 
 # Data module parameters

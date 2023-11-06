@@ -195,9 +195,7 @@ if __name__ == "__main__":
     if run_type == "predict_final":
         # lr_dm = LogisticsRegressionModule(batch_size=c.LR_BATCH_SIZE, seed=c.LR_SEED)
         # lr_m = LogisticsRegressionModel(config=c.LR_DEFAULT_CONFIG)
-        lr_m = LogisticsRegressionModel.load_from_checkpoint(
-            "best_logistics_model.ckpt"
-        )
+        lr_m = LogisticsRegressionModel.load_from_checkpoint("logistic_4_model.ckpt")
         lr_m.eval()
 
         # r_dm = CropDamageDataModule(batch_size=c.R_BATCH_SIZE, seed=c.R_SEED)
@@ -238,9 +236,9 @@ if __name__ == "__main__":
                 else:
                     answer = 0
 
-                data.append({"ID": y.item(), "extent": answer})
+                data.append({"ID": y[0], "extent": answer})
 
-                print(f"Image: {y.item()} Predicted: {answer}\n")
+                print(f"Image: {y[0]} Predicted: {answer}\n")
 
         # Define the CSV file name
         csv_file = "labels_and_extents.csv"

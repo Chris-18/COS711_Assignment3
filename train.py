@@ -222,6 +222,8 @@ if __name__ == "__main__":
             persistent_workers=True,
         )
 
+        data = []
+
         with torch.no_grad():
             for batch in dl:
                 x, y = batch
@@ -236,7 +238,23 @@ if __name__ == "__main__":
                 else:
                     answer = 0
 
+                data.append({"ID": y.item(), "extent": answer})
+
                 print(f"Image: {y.item()} Predicted: {answer}\n")
+
+        # Define the CSV file name
+        csv_file = "labels_and_extents.csv"
+
+        # Write the data to a CSV file
+        with open(csv_file, "w", newline="") as csvfile:
+            fieldnames = ["ID", "extent"]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+            writer.writeheader()
+            for row in data:
+                writer.writerow(row)
+
+        print(f'CSV file "{csv_file}" has been created with ID and extent columns.')
 
     # make predictions
     if run_type == "predict" and model == "logistic":
